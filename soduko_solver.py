@@ -5,7 +5,7 @@ import matplotlib.animation as animation
 from IPython.display import display , Image, HTML
 
 class SudokuGeneticSolver:
-    def __init__(self, grid, population_size=100, generations=1000, mutation_rate=0.1):
+    def __init__(self, grid, population_size=200, generations=2000, mutation_rate=0.5): #100,1000,0.1 default
         self.grid = np.array(grid)
         self.population_size = population_size
         self.generations = generations
@@ -159,15 +159,15 @@ class SudokuGeneticSolver:
 
 if __name__ == "__main__":
     grid = [
-        [5, 3, 0, 0, 7, 0, 0, 0, 0],
-        [6, 0, 0, 1, 9, 5, 0, 0, 0],
-        [0, 9, 8, 0, 0, 0, 0, 6, 0],
-        [8, 0, 0, 0, 6, 0, 0, 0, 3],
-        [4, 0, 0, 8, 0, 3, 0, 0, 1],
-        [7, 0, 0, 0, 2, 0, 0, 0, 6],
-        [0, 6, 0, 0, 0, 0, 2, 8, 0],
-        [0, 0, 0, 4, 1, 9, 0, 0, 5],
-        [0, 0, 0, 0, 8, 0, 0, 7, 9]
+        [5, 3, 4, 6, 7, 0, 0, 1, 0],
+        [6, 7, 2, 1, 9, 0, 0, 4, 0],
+        [1, 9, 8, 3, 4, 0, 0, 6, 0],
+        [8, 5, 9, 7, 6, 0, 0, 2, 0],
+        [4, 2, 6, 8, 5, 0, 0, 9, 0],
+        [7, 1, 3, 9, 2, 0, 0, 5, 0],
+        [9, 6, 1, 5, 3, 0, 0, 8, 0],
+        [2, 8, 7, 4, 1, 0, 0, 3, 0],
+        [3, 4, 5, 2, 8, 0, 0, 7, 0]
     ]
 
     solver = SudokuGeneticSolver(grid)
