@@ -52,6 +52,21 @@ class SudokuGeneticSolver:
     def visualize_solution(self, solutions):
         fig, ax = plt.subplots()
 
+        def is_valid_solution(state):
+            # Ellenőrizzük, hogy az aktuális állapot megfelel-e a Sudoku szabályainak
+            for row in state:
+                if len(set(row)) != 9:
+                    return False
+            for col in state.T:
+                if len(set(col)) != 9:
+                    return False
+            for i in range(0, 9, 3):
+                for j in range(0, 9, 3):
+                    block = state[i:i+3, j:j+3].flatten()
+                    if len(set(block)) != 9:
+                        return False
+            return True
+
         def update(frame):
             ax.clear()
             ax.imshow(np.ones((9, 9)), cmap='gray', alpha=0.3)
@@ -62,7 +77,10 @@ class SudokuGeneticSolver:
                         ax.text(j, i, str(state[i, j]), ha='center', va='center', fontsize=16)
             ax.set_xticks([])
             ax.set_yticks([])
-            ax.set_title(f"Generation: {frame + 1}")
+
+            # Ellenőrizzük, hogy az aktuális állapot helyes-e
+            valid = is_valid_solution(state)
+            ax.set_title(f"Generation: {frame + 1} - {'Valid' if valid else 'Invalid'}")
 
         ani = animation.FuncAnimation(fig, update, frames=len(solutions), interval=500)
 
