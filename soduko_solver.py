@@ -5,12 +5,12 @@ import matplotlib.animation as animation
 from IPython.display import display , Image, HTML
 
 class SudokuGeneticSolver:
-    def __init__(self, grid, population_size=1000, generations=3000, mutation_rate=0.3):
+    def __init__(self, grid, population_size=2000, generations=5000, mutation_rate=0.4):
         self.grid = np.array(grid)
         self.population_size = population_size
         self.generations = generations
         self.mutation_rate = mutation_rate
-        self.elite_size = int(population_size * 0.1)  # Legjobb 10% megőrzése
+        self.elite_size = int(population_size * 0.05)  # Csökkentett elit méret
 
     def solve(self):
         population = self.initialize_population()
@@ -29,15 +29,30 @@ class SudokuGeneticSolver:
 
     def solve_with_visualization(self):
         population = self.initialize_population()
-        solutions = []  # Most már minden generációt tárolunk
+        solutions = []
         fitness_history = []
+        stagnation_counter = 0
+        best_fitness = float('inf')
 
         for generation in range(self.generations):
             fitness_scores = [self.fitness(individual) for individual in population]
-            fitness_history.append(min(fitness_scores))
+            current_best = min(fitness_scores)
+            fitness_history.append(current_best)
 
-            # Minden generációnál kiírjuk az állapotot
-            print(f"Generation {generation}: Best fitness = {min(fitness_scores)}")
+            print(f"Generation {generation}: Best fitness = {current_best}")
+
+            if current_best >= best_fitness:
+                stagnation_counter += 1
+            else:
+                best_fitness = current_best
+                stagnation_counter = 0
+
+            # Újraindítás, ha túl sokáig nem javul
+            if stagnation_counter > 100:
+                print("Restarting population due to stagnation...")
+                population = self.initialize_population()
+                stagnation_counter = 0
+                continue
 
             # Ha megtaláltuk a megoldást
             if 0 in fitness_scores:
@@ -238,9 +253,17 @@ class SudokuGeneticSolver:
 
     def crossover(self, parent1, parent2):
         child = parent1.copy()
-        for row in range(9):
-            if random.random() > 0.5:
-                child[row] = parent2[row]
+        # Több pont keresztezés
+        crossover_points = sorted(random.sample(range(9), random.randint(2, 4)))
+        current_parent = parent1
+        start = 0
+        
+        for point in crossover_points:
+            child[start:point] = current_parent[start:point]
+            current_parent = parent2 if current_parent is parent1 else parent1
+            start = point
+        
+        child[start:] = current_parent[start:]
         return child
 
     def mutate(self, individual):
@@ -249,25 +272,32 @@ class SudokuGeneticSolver:
             if random.random() < self.mutation_rate:
                 empty_positions = [i for i in range(9) if self.grid[row][i] == 0]
                 if len(empty_positions) > 1:
-                    # Több pozíció cseréje egy sorban
-                    num_swaps = random.randint(1, min(3, len(empty_positions) // 2))
-                    for _ in range(num_swaps):
-                        pos1, pos2 = random.sample(empty_positions, 2)
-                        mutated[row][pos1], mutated[row][pos2] = mutated[row][pos2], mutated[row][pos1]
+                    # Nagyobb változtatás: több csere vagy teljes sor újrakeverése
+                    if random.random() < 0.3:  # 30% esély a sor teljes újrakeverésére
+                        values = [mutated[row][i] for i in empty_positions]
+                        random.shuffle(values)
+                        for pos, value in zip(empty_positions, values):
+                            mutated[row][pos] = value
+                    else:
+                        # Több csere végrehajtása
+                        num_swaps = random.randint(2, len(empty_positions))
+                        for _ in range(num_swaps):
+                            pos1, pos2 = random.sample(empty_positions, 2)
+                            mutated[row][pos1], mutated[row][pos2] = mutated[row][pos2], mutated[row][pos1]
         return mutated
 
 
 if __name__ == "__main__":
     grid = [
-        [9, 0, 0, 0, 8, 0, 0, 0, 0],
-        [0, 3, 0, 0, 0, 5, 0, 0, 9],
-        [0, 0, 0, 3, 9, 0, 0, 7, 0],
-        [0, 0, 0, 7, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 3, 1, 0, 0, 6],
-        [7, 0, 0, 6, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 7, 3, 0, 2],
-        [0, 0, 0, 0, 0, 0, 1, 0, 7],
-        [0, 7, 0, 0, 0, 9, 0, 0, 0]
+        [0, 4, 0, 8, 6, 0, 0, 9, 0],
+        [0, 0, 6, 0, 7, 9, 0, 0, 8],
+        [0, 8, 0, 1, 0, 0, 2, 0, 0],
+        [0, 1, 0, 0, 0, 0, 8, 7, 9],
+        [3, 5, 0, 0, 9, 8, 0, 0, 0],
+        [6, 9, 0, 0, 0, 0, 0, 2, 0],
+        [0, 0, 0, 6, 5, 1, 0, 8, 7],
+        [8, 7, 5, 0, 2, 4, 6, 0, 0],
+        [9, 0, 0, 7, 0, 3, 0, 0, 0],
     ]
 
     solver = SudokuGeneticSolver(grid)
