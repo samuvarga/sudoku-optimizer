@@ -5,11 +5,12 @@ import matplotlib.animation as animation
 from IPython.display import display , Image, HTML
 
 class SudokuGeneticSolver:
-    def __init__(self, grid, population_size=200, generations=2000, mutation_rate=0.5): #100,1000,0.1 default
+    def __init__(self, grid, population_size=1000, generations=3000, mutation_rate=0.3):
         self.grid = np.array(grid)
         self.population_size = population_size
         self.generations = generations
         self.mutation_rate = mutation_rate
+        self.elite_size = int(population_size * 0.1)  # Legjobb 10% megőrzése
 
     def solve(self):
         population = self.initialize_population()
@@ -28,32 +29,41 @@ class SudokuGeneticSolver:
 
     def solve_with_visualization(self):
         population = self.initialize_population()
-        solutions = []
+        solutions = []  # Most már minden generációt tárolunk
+        fitness_history = []
 
         for generation in range(self.generations):
             fitness_scores = [self.fitness(individual) for individual in population]
+            fitness_history.append(min(fitness_scores))
 
+            # Minden generációnál kiírjuk az állapotot
+            print(f"Generation {generation}: Best fitness = {min(fitness_scores)}")
+
+            # Ha megtaláltuk a megoldást
             if 0 in fitness_scores:
                 solution_index = fitness_scores.index(0)
                 solutions.append(population[solution_index])
                 self.visualize_solution(solutions)
-                return population[solution_index], generation + 1  # Visszaadjuk a generáció számát
+                self.plot_fitness_history(fitness_history)
+                return population[solution_index], generation + 1
 
+            # Új generáció létrehozása
             new_population = self.create_new_generation(population, fitness_scores)
             population = new_population
 
-            # Mentjük a populáció legjobb egyedét a vizualizációhoz
+            # Minden generációt hozzáadunk az animációhoz
             best_index = fitness_scores.index(min(fitness_scores))
             solutions.append(population[best_index])
 
+        # Ha nem találtunk megoldást, az összes állapotot vizualizáljuk
         self.visualize_solution(solutions)
-        return None, None  # Ha nincs megoldás, None-t adunk vissza
+        self.plot_fitness_history(fitness_history)
+        return None, None
 
     def visualize_solution(self, solutions):
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=(8, 8))
 
         def is_valid_solution(state):
-            # Ellenőrizzük, hogy az aktuális állapot megfelel-e a Sudoku szabályainak
             for row in state:
                 if len(set(row)) != 9:
                     return False
@@ -69,30 +79,104 @@ class SudokuGeneticSolver:
 
         def update(frame):
             ax.clear()
-            ax.imshow(np.ones((9, 9)), cmap='gray', alpha=0.3)
             state = solutions[frame]
+            
+            # Rajzoljuk meg a cellák hátterét
             for i in range(9):
                 for j in range(9):
+                    ax.add_patch(plt.Rectangle((j-0.5, i-0.5), 1, 1, 
+                                            facecolor='white' if self.grid[i, j] != 0 else '#f0f0f0',
+                                            edgecolor='black',
+                                            linewidth=0.5))
                     if state[i, j] != 0:
-                        ax.text(j, i, str(state[i, j]), ha='center', va='center', fontsize=16)
+                        ax.text(j, i, str(state[i, j]), 
+                               ha='center', va='center', 
+                               fontsize=16,
+                               color='black')
+            
+            # Rácsvonalak rajzolása
+            for n in range(10):
+                lw = 2 if n % 3 == 0 else 0.5
+                ax.axhline(y=n-0.5, color='black', linewidth=lw)
+                ax.axvline(x=n-0.5, color='black', linewidth=lw)
+                
+            ax.set_xlim(-0.5, 8.5)
+            ax.set_ylim(8.5, -0.5)
             ax.set_xticks([])
             ax.set_yticks([])
-
-            # Ellenőrizzük, hogy az aktuális állapot helyes-e
+            
+            # Ellenőrizzük az aktuális állapotot és frissítsük a címet
             valid = is_valid_solution(state)
-            ax.set_title(f"Generation: {frame + 1} - {'Valid' if valid else 'Invalid'}")
+            ax.set_title(f"Generation: {frame} - {'Valid' if valid else 'Invalid'}", 
+                        pad=20)
 
         ani = animation.FuncAnimation(fig, update, frames=len(solutions), interval=500)
 
-        # Megjelenítés Jupyter Notebookban (ha szükséges)
         try:
             display(HTML(ani.to_jshtml()))
         except NameError:
             pass
 
-        # GIF mentés
+        # GIF mentése
         ani.save("sudoku_solution.gif", writer="pillow", fps=2)
-        print("GIF saved as 'sudoku_solution.gif'")
+        print(f"GIF saved as 'sudoku_solution.gif' with {len(solutions)} frames")
+        plt.show()
+
+    def plot_fitness_history(self, fitness_history):
+        plt.figure(figsize=(10, 6))
+        plt.plot(fitness_history, label="Best Fitness")
+        plt.title("Fitness Value Over Generations")
+        plt.xlabel("Generation")
+        plt.ylabel("Fitness Value")
+        plt.legend()
+        plt.grid()
+        plt.savefig("fitness_history.png")  # Save the plot as an image
+        print("Fitness history plot saved as 'fitness_history.png'")
+        plt.show()
+
+    def compare_grids(self, solution):
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 8))
+        
+        # Kezdő rács
+        ax1.set_title("Initial Grid")
+        for i in range(9):
+            for j in range(9):
+                ax1.add_patch(plt.Rectangle((j-0.5, i-0.5), 1, 1, 
+                                        facecolor='white',
+                                        edgecolor='black',
+                                        linewidth=0.5))
+                if self.grid[i, j] != 0:
+                    ax1.text(j, i, str(self.grid[i, j]), 
+                           ha='center', va='center', 
+                           fontsize=16,
+                           color='black')
+        
+        # Megoldott rács
+        ax2.set_title("Solution Grid")
+        for i in range(9):
+            for j in range(9):
+                ax2.add_patch(plt.Rectangle((j-0.5, i-0.5), 1, 1, 
+                                        facecolor='#f0f0f0' if self.grid[i, j] == 0 else 'white',
+                                        edgecolor='black',
+                                        linewidth=0.5))
+                ax2.text(j, i, str(solution[i, j]), 
+                       ha='center', va='center', 
+                       fontsize=16,
+                       color='blue' if self.grid[i, j] == 0 else 'black')
+        
+        # Rácsvonalak mindkét táblához
+        for ax in [ax1, ax2]:
+            for n in range(10):
+                lw = 2 if n % 3 == 0 else 0.5
+                ax.axhline(y=n-0.5, color='black', linewidth=lw)
+                ax.axvline(x=n-0.5, color='black', linewidth=lw)
+            ax.set_xlim(-0.5, 8.5)
+            ax.set_ylim(8.5, -0.5)
+            ax.set_xticks([])
+            ax.set_yticks([])
+        
+        plt.savefig("sudoku_comparison.png", bbox_inches='tight', dpi=150)
+        print("Comparison image saved as 'sudoku_comparison.png'")
         plt.show()
 
     def initialize_population(self):
@@ -125,19 +209,31 @@ class SudokuGeneticSolver:
 
     def create_new_generation(self, population, fitness_scores):
         new_population = []
+        
+        # Elitizmus - legjobb egyedek megőrzése
+        elite_indices = sorted(range(len(fitness_scores)), key=lambda i: fitness_scores[i])[:self.elite_size]
+        elites = [population[i] for i in elite_indices]
+        new_population.extend(elites)
+        
+        # Populáció feltöltése új egyedekkel
         selected = self.select_population(population, fitness_scores)
         while len(new_population) < self.population_size:
             parent1, parent2 = random.sample(selected, 2)
             child = self.crossover(parent1, parent2)
+            if random.random() < self.mutation_rate:
+                child = self.mutate(child)
             new_population.append(child)
-        new_population = [self.mutate(individual) for individual in new_population]
+        
         return new_population
 
     def select_population(self, population, fitness_scores):
-        total_fitness = sum(fitness_scores)
-        probabilities = [1 - (score / total_fitness) for score in fitness_scores]
-        probabilities = [p / sum(probabilities) for p in probabilities]
-        selected = random.choices(population, weights=probabilities, k=self.population_size // 2)
+        # Tournament selection implementálása
+        tournament_size = 5
+        selected = []
+        for _ in range(self.population_size // 2):
+            tournament = random.sample(list(enumerate(fitness_scores)), tournament_size)
+            winner_idx = min(tournament, key=lambda x: x[1])[0]
+            selected.append(population[winner_idx])
         return selected
 
     def crossover(self, parent1, parent2):
@@ -148,26 +244,30 @@ class SudokuGeneticSolver:
         return child
 
     def mutate(self, individual):
-        if random.random() < self.mutation_rate:
-            row = random.randint(0, 8)
-            cols = [col for col in range(9) if self.grid[row][col] == 0]
-            if len(cols) > 1:
-                col1, col2 = random.sample(cols, 2)
-                individual[row][col1], individual[row][col2] = individual[row][col2], individual[row][col1]
-        return individual
+        mutated = individual.copy()
+        for row in range(9):
+            if random.random() < self.mutation_rate:
+                empty_positions = [i for i in range(9) if self.grid[row][i] == 0]
+                if len(empty_positions) > 1:
+                    # Több pozíció cseréje egy sorban
+                    num_swaps = random.randint(1, min(3, len(empty_positions) // 2))
+                    for _ in range(num_swaps):
+                        pos1, pos2 = random.sample(empty_positions, 2)
+                        mutated[row][pos1], mutated[row][pos2] = mutated[row][pos2], mutated[row][pos1]
+        return mutated
 
 
 if __name__ == "__main__":
     grid = [
-        [0, 3, 4, 6, 7, 8, 9, 1, 0],
-        [6, 0, 2, 1, 0, 5, 3, 0, 8],
-        [1, 9, 0, 3, 4, 2, 0, 6, 7],
-        [8, 5, 9, 0, 6, 0, 4, 2, 3],
-        [0, 2, 0, 8, 0, 3, 0, 9, 0],
-        [7, 1, 3, 0, 2, 0, 8, 5, 6],
-        [9, 6, 0, 5, 0, 7, 0, 8, 4],
-        [2, 0, 7, 4, 1, 9, 6, 0, 5],
-        [0, 4, 5, 2, 0, 6, 1, 7, 0]
+        [9, 0, 0, 0, 8, 0, 0, 0, 0],
+        [0, 3, 0, 0, 0, 5, 0, 0, 9],
+        [0, 0, 0, 3, 9, 0, 0, 7, 0],
+        [0, 0, 0, 7, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 3, 1, 0, 0, 6],
+        [7, 0, 0, 6, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 7, 3, 0, 2],
+        [0, 0, 0, 0, 0, 0, 1, 0, 7],
+        [0, 7, 0, 0, 0, 9, 0, 0, 0]
     ]
 
     solver = SudokuGeneticSolver(grid)
@@ -177,5 +277,6 @@ if __name__ == "__main__":
         print("Sudoku solved!")
         print(np.array(solution))
         print(f"Solved in {generation} generations.")
+        solver.compare_grids(solution)  # Új összehasonlító kép generálása
     else:
         print("No solution found.")
