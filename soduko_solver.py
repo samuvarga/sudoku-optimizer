@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from IPython.display import display , Image, HTML
+import time
 
 class SudokuGeneticSolver:
     def __init__(self, grid, population_size=3000, generations=5000, mutation_rate=0.3):
@@ -28,6 +29,7 @@ class SudokuGeneticSolver:
         return None
 
     def solve_with_visualization(self):
+        start_time = time.time()  # Timer indítása
         population = self.initialize_population()
         solutions = []
         fitness_history = []
@@ -47,30 +49,33 @@ class SudokuGeneticSolver:
                 best_fitness = current_best
                 stagnation_counter = 0
 
-            # Újraindítás, ha túl sokáig nem javul
             if stagnation_counter > 100:
                 print("Restarting population due to stagnation...")
                 population = self.initialize_population()
                 stagnation_counter = 0
                 continue
 
-            # Ha megtaláltuk a megoldást
             if 0 in fitness_scores:
+                end_time = time.time()  # Timer leállítása
+                elapsed_time = end_time - start_time
+                print(f"\nFutási idő: {elapsed_time:.2f} másodperc")
+                
                 solution_index = fitness_scores.index(0)
                 solutions.append(population[solution_index])
                 self.visualize_solution(solutions)
                 self.plot_fitness_history(fitness_history)
                 return population[solution_index], generation + 1
 
-            # Új generáció létrehozása
             new_population = self.create_new_generation(population, fitness_scores)
             population = new_population
 
-            # Minden generációt hozzáadunk az animációhoz
             best_index = fitness_scores.index(min(fitness_scores))
             solutions.append(population[best_index])
 
-        # Ha nem találtunk megoldást, az összes állapotot vizualizáljuk
+        end_time = time.time()  # Timer leállítása sikertelen próbálkozás esetén
+        elapsed_time = end_time - start_time
+        print(f"\nFutási idő: {elapsed_time:.2f} másodperc")
+        
         self.visualize_solution(solutions)
         self.plot_fitness_history(fitness_history)
         return None, None
