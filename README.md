@@ -1,104 +1,191 @@
-# Sudoku Optimizer
+# Sudoku Optimalizáló
 
-This project implements an optimization algorithm for solving Sudoku puzzles. The Sudoku optimizer aims to provide an efficient way to solve Sudoku grids using various optimization techniques.
-
-Ez a projekt egy optimalizálási algoritmust valósít meg a Sudoku rejtvények megoldására. A Sudoku optimalizáló célja, hogy hatékony módot biztosítson a Sudoku rácsok megoldására különböző optimalizálási technikák segítségével.
+Ez a projekt egy genetikus algoritmust implementál a Sudoku rejtvények megoldására. Az algoritmus evolúciós technikákat használ különböző nehézségű Sudoku rácsok megoldására.
 
 ---
 
-## Project Structure / Projekt Struktúra
+## Projekt Struktúra
 
 ```
 sudoku-optimizer
 ├── soduko_solver.py
-├── requirements.txt
+├── grids.txt
 └── README.md
 ```
 
-- **`soduko_solver.py`**: Contains the implementation of the genetic algorithm for solving Sudoku puzzles.
-  - Tartalmazza a genetikus algoritmus implementációját a Sudoku rejtvények megoldására.
-- **`requirements.txt`**: Lists the required Python packages for the project.
-  - A projekthez szükséges Python-csomagokat tartalmazza.
-- **`README.md`**: Documentation for the project.
-  - A projekt dokumentációja.
+- **`soduko_solver.py`**: Tartalmazza a genetikus algoritmus implementációját vizualizációs funkciókkal.
+- **`grids.txt`**: Különböző nehézségű Sudoku rácsok gyűjteménye (2-60 üres cellával).
+- **`README.md`**: A projekt dokumentációja.
 
 ---
 
-## Installation / Telepítés
+## Jellemzők
 
-To install the required dependencies, run:
-A szükséges függőségek telepítéséhez futtasd az alábbi parancsot:
-
-```
-pip install -r requirements.txt
-```
+- Genetikus algoritmus implementáció
+- A megoldási folyamat vizuális megjelenítése
+- Különböző nehézségi szintek támogatása
+- Folyamat vizualizáció matplotlib segítségével
+- Megoldás animáció mentése GIF formátumban
 
 ---
 
-## Usage / Használat
+## Követelmények
 
-To solve a Sudoku puzzle, you can use the `SudokuGeneticSolver` class from the `soduko_solver.py` file. Here is a basic example:
-Egy Sudoku rejtvény megoldásához használd a `SudokuGeneticSolver` osztályt a `soduko_solver.py` fájlból. Íme egy alapvető példa:
+- Python 3.x
+- numpy
+- matplotlib
+- IPython
+
+---
+
+## Használat
+
+Egy Sudoku rejtvény megoldásához használd a `SudokuGeneticSolver` osztályt a `soduko_solver.py` fájlból:
 
 ```python
 from soduko_solver import SudokuGeneticSolver
+import numpy as np
 
-grid = [
-    [0, 3, 4, 6, 7, 8, 9, 1, 0],
-    [6, 0, 2, 1, 0, 5, 3, 0, 8],
-    [1, 9, 0, 3, 4, 2, 0, 6, 7],
-    [8, 5, 9, 0, 6, 0, 4, 2, 3],
-    [0, 2, 0, 8, 0, 3, 0, 9, 0],
-    [7, 1, 3, 0, 2, 0, 8, 5, 6],
-    [9, 6, 0, 5, 0, 7, 0, 8, 4],
-    [2, 0, 7, 4, 1, 9, 6, 0, 5],
-    [0, 4, 5, 2, 0, 6, 1, 7, 0]
+# Példa rács 60 üres cellával (nehéz)
+racs = [
+    [9, 0, 0, 0, 8, 0, 0, 0, 0],
+    [0, 3, 0, 0, 0, 5, 0, 0, 9],
+    [0, 0, 0, 3, 9, 0, 0, 7, 0],
+    [0, 0, 0, 7, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 3, 1, 0, 0, 6],
+    [7, 0, 0, 6, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 7, 3, 0, 2],
+    [0, 0, 0, 0, 0, 0, 1, 0, 7],
+    [0, 7, 0, 0, 0, 9, 0, 0, 0]
 ]
 
-solver = SudokuGeneticSolver(grid)
-solution, generation_found = solver.solve_with_visualization()
+megoldo = SudokuGeneticSolver(racs)
+megoldas, generacio = megoldo.solve_with_visualization()
 
-if solution is not None:
-    print("Sudoku solved!")
-    print(np.array(solution))
-    print(f"Solution found at generation: {generation_found}")
+if megoldas is not None:
+    print("Sudoku megoldva!")
+    print(np.array(megoldas))
+    print(f"Megoldva {generacio} generáció alatt.")
 else:
-    print("No solution found.")
+    print("Nem található megoldás.")
 ```
 
 ---
 
-## Visualization / Vizualizáció
+## Vizualizáció
 
-The project includes a visualization of the Sudoku solving process. The solution steps are saved as a GIF file named `sudoku_solution.gif`.
+A megoldó két típusú vizualizációt generál:
 
-A projekt tartalmaz egy vizualizációt a Sudoku megoldási folyamatáról. A megoldás lépései egy `sudoku_solution.gif` nevű GIF fájlba kerülnek mentésre.
+1. **Megoldási folyamat animáció**
+   - Mentve `sudoku_solution.gif` néven
+   - Mutatja a legjobb megoldás evolúcióját minden generációban
 
-### Example / Példa
+2. **Fitness történet grafikon**
+   - Mutatja hogyan javul a megoldás minősége a generációk során
 
-Below is an example of the generated GIF:
+### Példa
+
 Az alábbiakban egy példa a generált GIF-re:
 
-![Sudoku Solution](sudoku_solution.gif)
+![Sudoku Megoldás](sudoku_solution.gif)
 
 ---
 
-## Running Tests / Tesztek futtatása
+## Paraméterek
 
-To run the tests for the project, use the following command:
-A projekt tesztjeinek futtatásához használd az alábbi parancsot:
+A genetikus algoritmus az alábbi paraméterekkel hangolható:
 
-```
-pytest
-```
-
-This will execute all unit tests defined in the `tests` directory.
-Ez végrehajtja az összes tesztet, amely a `tests` könyvtárban van definiálva.
+- `population_size`: Populáció mérete (alapértelmezett: 2000)
+- `generations`: Maximális generációk száma (alapértelmezett: 5000)
+- `mutation_rate`: Mutáció valószínűsége (alapértelmezett: 0.4)
+- `elite_size`: Megőrzendő legjobb megoldások száma (populáció 5%-a)
 
 ---
 
-## Contributing / Hozzájárulás
+## Algoritmus Részletek
 
-Contributions are welcome! Please feel free to submit a pull request or open an issue for any suggestions or improvements.
+A genetikus algoritmus a következő főbb lépéseket követi:
 
-Hozzájárulásokat szívesen fogadok! Nyugodtan küldj pull requestet, vagy nyiss egy hibajegyet bármilyen javaslat vagy fejlesztés esetén.
+### Pszeudokód
+
+```
+Populáció Inicializálása:
+    Minden egyedre a populációban:
+        Érvényes Sudoku rács létrehozása az eredeti számok megtartásával
+        Üres cellák feltöltése véletlenszerű érvényes számokkal
+
+Amíg generációk < max_generációk:
+    Fitness Számítás:
+        Minden egyedre:
+            Sorok duplikátumainak számolása
+            Oszlopok duplikátumainak számolása
+            3x3-as blokkok duplikátumainak számolása
+            Minden duplikátum összegzése fitness értékként
+            (Alacsonyabb fitness érték jobb, 0 a tökéletes megoldás)
+    
+    Ha legjobb_fitness == 0:
+        Megoldás megtalálva, kilépés
+        
+    Új Generáció Létrehozása:
+        Szülők Kiválasztása:
+            Legjobb megoldások megtartása (elit_méret)
+            Torna szelekció a maradék helyekre
+        
+        Keresztezés:
+            Kiválasztott szülőkre:
+                Véletlenszerű keresztezési pontok választása
+                Gyermek létrehozása szülők kombinálásával
+        
+        Mutáció:
+            Minden sorra a gyermekben:
+                Mutációs_ráta valószínűséggel:
+                    Két véletlenszerű cella cseréje a sorban
+                    (Csak az eredetileg üres cellák cserélhetők)
+    
+    Ha stagnálás észlelhető:
+        Populáció újraindítása
+```
+
+### Főbb Komponensek
+
+1. **Populáció Inicializálás**
+   - Érvényes kezdeti rácsok létrehozása az eredeti puzzle számainak megtartásával
+   - Üres cellák véletlenszerű feltöltése a sorokon belüli Sudoku szabályok betartásával
+
+2. **Fitness Számítás**
+   - Értékeli, mennyire közel van egy megoldás az érvényességhez
+   - Számlálja a duplikátumokat sorokban, oszlopokban és 3x3-as blokkokban
+   - A tökéletes megoldás fitness értéke 0 (nincs duplikátum)
+
+3. **Kiválasztás**
+   - Elitizmus: Megtartja a legjobb megoldásokat
+   - Torna szelekció: Véletlenszerűen kiválaszt egyedeket és a legjobbat választja
+   - Jobb fitness értékű egyedeknek nagyobb az esélye a kiválasztásra
+
+4. **Keresztezés**
+   - Két szülő megoldás kombinálása új megoldás létrehozásához
+   - Több keresztezési pontot használ a sorok cseréjéhez
+   - Megőrzi az eredeti puzzle számait
+
+5. **Mutáció**
+   - Véletlenszerűen cserél számokat a sorokon belül
+   - Csak az eredetileg üres cellákat mutálja
+   - Segít fenntartani a populáció változatosságát
+
+6. **Újraindítási Mechanizmus**
+   - Észleli, amikor az algoritmus elakad (stagnálás)
+   - Újrainicializálja a populációt a legjobb megoldások megtartásával
+   - Segít elkerülni a lokális optimumokat
+
+A genetikus algoritmus specifikusan Sudokura adaptált az alábbiak szerint:
+
+- Érvényes sorok fenntartása az inicializálás során
+- Csak az eredetileg üres cellák módosítása
+- Sororientált keresztezés a részleges megoldások megőrzésére
+- Intelligens mutáció a Sudoku szabályok betartásával
+
+---
+
+## Hozzájárulás
+
+Nyugodtan küldj hibajegyeket és fejlesztési javaslatokat!
