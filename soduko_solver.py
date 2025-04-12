@@ -5,12 +5,12 @@ import matplotlib.animation as animation
 from IPython.display import display , Image, HTML
 
 class SudokuGeneticSolver:
-    def __init__(self, grid, population_size=2000, generations=5000, mutation_rate=0.4):
+    def __init__(self, grid, population_size=3000, generations=5000, mutation_rate=0.3):
         self.grid = np.array(grid)
         self.population_size = population_size
         self.generations = generations
         self.mutation_rate = mutation_rate
-        self.elite_size = int(population_size * 0.05)  # Csökkentett elit méret
+        self.elite_size = int(population_size * 0.1)  
 
     def solve(self):
         population = self.initialize_population()
