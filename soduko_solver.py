@@ -12,20 +12,27 @@ class SudokuGeneticSolver:
         self.generations = generations
         self.mutation_rate = mutation_rate
         self.elite_size = int(population_size * 0.1)  
+        self.last_generation = None
+        self.fitness_history = []
 
     def solve(self):
         population = self.initialize_population()
+        self.fitness_history = []
 
         for generation in range(self.generations):
             fitness_scores = [self.fitness(individual) for individual in population]
+            current_best = min(fitness_scores)
+            self.fitness_history.append(current_best)
 
             if 0 in fitness_scores:
                 solution_index = fitness_scores.index(0)
+                self.last_generation = generation + 1
                 return population[solution_index]
 
             new_population = self.create_new_generation(population, fitness_scores)
             population = new_population
 
+        self.last_generation = None
         return None
 
     def solve_with_visualization(self):
