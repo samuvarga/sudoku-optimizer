@@ -9,11 +9,13 @@ Ez a projekt egy genetikus algoritmust implementál a Sudoku rejtvények megold�
 ```
 sudoku-optimizer
 ├── soduko_solver.py
+├── sudoku_tester.py
 ├── grids.txt
 └── README.md
 ```
 
 - **`soduko_solver.py`**: Tartalmazza a genetikus algoritmus implementációját vizualizációs funkciókkal.
+- **`sudoku_tester.py`**: Tesztelési és teljesítmény-elemzési funkciókat tartalmaz.
 - **`grids.txt`**: Különböző nehézségű Sudoku rácsok gyűjteménye (2-60 üres cellával).
 - **`README.md`**: A projekt dokumentációja.
 
@@ -26,6 +28,7 @@ sudoku-optimizer
 - Különböző nehézségi szintek támogatása
 - Folyamat vizualizáció matplotlib segítségével
 - Megoldás animáció mentése GIF formátumban
+- Teljesítmény tesztelés és összehasonlítás
 
 ---
 
@@ -74,20 +77,37 @@ else:
 
 ## Vizualizáció
 
-A megoldó két típusú vizualizációt generál:
+A projekt két különböző típusú vizualizációt tartalmaz:
 
-1. **Megoldási folyamat animáció**
-   - Mentve `sudoku_solution.gif` néven
-   - Mutatja a legjobb megoldás evolúcióját minden generációban
+### 1. Solver Vizualizáció (`soduko_solver.py`)
+- **Megoldási folyamat animáció**
+  - Mentve `sudoku_solution.gif` néven
+  - Mutatja a legjobb megoldás evolúcióját minden generációban
+- **Fitness történet grafikon**
+  - A fitness értékek változása a generációk során
+- **Összehasonlító kép**
+  - Kezdő és végállapot összehasonlítása
+  - Eredeti számok és a megoldás vizuális összevetése
 
-2. **Fitness történet grafikon**
-   - Mutatja hogyan javul a megoldás minősége a generációk során
+### 2. Teszt Vizualizáció (`sudoku_tester.py`)
+- **Teljesítmény táblázat**
+  - Különböző populáció méretekkel futtatott tesztek eredményei
+  - PNG formátumban mentve (`sudoku_test_results.png`)
+  - Tartalmazza:
+    - Populáció méreteket
+    - Elit méretet
+    - Megoldás sikerességét
+    - Generációk számát
+    - Futási időt
+    - Sikerességi rátát
 
-### Példa
+### Példa Kimenetek
 
-Az alábbiakban egy példa a generált GIF-re:
+1. **Megoldási Folyamat**
+   ![Sudoku Megoldás](sudoku_solution.gif)
 
-![Sudoku Megoldás](sudoku_solution.gif)
+2. **Teljesítmény Összehasonlítás**
+   ![Teszt Eredmények](sudoku_test_results.png)
 
 ---
 
@@ -109,80 +129,143 @@ A genetikus algoritmus a következő főbb lépéseket követi:
 ### Pszeudokód
 
 ```
+Inicializálás:
+    Timer indítása
+    Populáció méret = 3000
+    Generációk száma = 5000
+    Mutációs ráta = 0.3
+    Elit méret = populáció_méret * 0.1
+    Stagnálás számláló = 0
+    Legjobb fitness = végtelen
+
 Populáció Inicializálása:
     Minden egyedre a populációban:
-        Érvényes Sudoku rács létrehozása az eredeti számok megtartásával
-        Üres cellák feltöltése véletlenszerű érvényes számokkal
+        Grid másolása
+        Minden sorra:
+            Hiányzó számok összegyűjtése (1-9 közül)
+            Számok véletlenszerű keverése
+            Üres cellák feltöltése a kevert számokkal
 
 Amíg generációk < max_generációk:
     Fitness Számítás:
         Minden egyedre:
-            Sorok duplikátumainak számolása
-            Oszlopok duplikátumainak számolása
-            3x3-as blokkok duplikátumainak számolása
-            Minden duplikátum összegzése fitness értékként
-            (Alacsonyabb fitness érték jobb, 0 a tökéletes megoldás)
+            Fitness = 0
+            Minden sorra:
+                Fitness += (9 - egyedi_számok_száma)
+            Minden oszlopra:
+                Fitness += (9 - egyedi_számok_száma)
+            Minden 3x3 blokkra:
+                Fitness += (9 - egyedi_számok_száma)
+
+    Aktuális legjobb fitness kiírása
     
-    Ha legjobb_fitness == 0:
-        Megoldás megtalálva, kilépés
+    Stagnálás Ellenőrzése:
+        Ha aktuális_legjobb >= legjobb_fitness:
+            Stagnálás_számláló++
+        Egyébként:
+            Legjobb_fitness = aktuális_legjobb
+            Stagnálás_számláló = 0
         
+        Ha stagnálás_számláló > 100:
+            Populáció újraindítása
+            Következő generációra ugrás
+
+    Ha van 0 fitness:
+        Timer leállítása
+        Futási idő kiírása
+        Megoldás vizualizálása
+        Return (megoldás, generáció_szám)
+
     Új Generáció Létrehozása:
-        Szülők Kiválasztása:
-            Legjobb megoldások megtartása (elit_méret)
-            Torna szelekció a maradék helyekre
-        
-        Keresztezés:
-            Kiválasztott szülőkre:
-                Véletlenszerű keresztezési pontok választása
-                Gyermek létrehozása szülők kombinálásával
-        
-        Mutáció:
-            Minden sorra a gyermekben:
-                Mutációs_ráta valószínűséggel:
-                    Két véletlenszerű cella cseréje a sorban
-                    (Csak az eredetileg üres cellák cserélhetők)
-    
-    Ha stagnálás észlelhető:
-        Populáció újraindítása
+        Elit egyedek kiválasztása (legjobb 10%)
+        Tournament selection (5-ös méretű tornák)
+        Amíg új_populáció < populáció_méret:
+            Két szülő véletlenszerű kiválasztása
+            Többpontos keresztezés (2-4 pont)
+            Ha random < mutációs_ráta:
+                Mutáció:
+                    Minden sorra:
+                        Ha random < mutációs_ráta:
+                            Ha random < 0.3:
+                                Teljes sor újrakeverése
+                            Egyébként:
+                                2-n véletlenszerű csere a sorban
+                                (n = üres cellák száma)
+            Új egyed hozzáadása a populációhoz
+
+    Legjobb megoldás mentése vizualizációhoz
+
+Ha nem talált megoldást:
+    Timer leállítása
+    Futási idő kiírása
+    Return (None, None)
 ```
 
 ### Főbb Komponensek
 
 1. **Populáció Inicializálás**
-   - Érvényes kezdeti rácsok létrehozása az eredeti puzzle számainak megtartásával
-   - Üres cellák véletlenszerű feltöltése a sorokon belüli Sudoku szabályok betartásával
+   - Grid másolása és üres cellák feltöltése
+   - Soronként véletlenszerű érvényes számok generálása
+   - Eredeti számok megőrzése
 
 2. **Fitness Számítás**
-   - Értékeli, mennyire közel van egy megoldás az érvényességhez
-   - Számlálja a duplikátumokat sorokban, oszlopokban és 3x3-as blokkokban
-   - A tökéletes megoldás fitness értéke 0 (nincs duplikátum)
+   - Sorok, oszlopok és blokkok duplikátumainak számolása
+   - Tökéletes megoldás esetén fitness = 0
+   - Magasabb érték = több duplikátum
 
-3. **Kiválasztás**
-   - Elitizmus: Megtartja a legjobb megoldásokat
-   - Torna szelekció: Véletlenszerűen kiválaszt egyedeket és a legjobbat választja
-   - Jobb fitness értékű egyedeknek nagyobb az esélye a kiválasztásra
+3. **Stagnálás Kezelése**
+   - 100 generáció után újraindítás ha nincs javulás
+   - Legjobb fitness érték követése
+   - Populáció újrainicializálása szükség esetén
 
-4. **Keresztezés**
-   - Két szülő megoldás kombinálása új megoldás létrehozásához
-   - Több keresztezési pontot használ a sorok cseréjéhez
-   - Megőrzi az eredeti puzzle számait
+4. **Új Generáció**
+   - Elit egyedek megőrzése (10%)
+   - Tournament selection szülők kiválasztásához
+   - Többpontos keresztezés
+   - Kétféle mutációs stratégia
 
-5. **Mutáció**
-   - Véletlenszerűen cserél számokat a sorokon belül
-   - Csak az eredetileg üres cellákat mutálja
-   - Segít fenntartani a populáció változatosságát
+5. **Időmérés és Vizualizáció**
+   - Futási idő mérése
+   - Generációk számának követése
+   - Megoldási folyamat vizualizálása
 
-6. **Újraindítási Mechanizmus**
-   - Észleli, amikor az algoritmus elakad (stagnálás)
-   - Újrainicializálja a populációt a legjobb megoldások megtartásával
-   - Segít elkerülni a lokális optimumokat
+---
 
-A genetikus algoritmus specifikusan Sudokura adaptált az alábbiak szerint:
+## Teljesítmény Jellemzők
 
-- Érvényes sorok fenntartása az inicializálás során
-- Csak az eredetileg üres cellák módosítása
-- Sororientált keresztezés a részleges megoldások megőrzésére
-- Intelligens mutáció a Sudoku szabályok betartásával
+### Erőforrás Használat
+- **CPU**: Intenzív számítási műveletek a genetikus algoritmusban
+- **Memória**: 
+  - Populáció tárolása (N * 9 * 9 méretű tömbök)
+  - Fitness történet és megoldások tárolása
+  - Vizualizációs adatok
+
+### Futási Idő
+- Függ a következőktől:
+  - Populáció méret
+  - Üres cellák száma
+  - Generációk maximális száma
+  - CPU teljesítmény
+
+### Skálázhatóság
+- Nagyobb populáció = pontosabb megoldás, hosszabb futási idő
+- Több generáció = nagyobb esély a megoldásra
+- Magasabb elit arány = stabilabb konvergencia
+
+---
+
+## Ismert Korlátozások
+- Nagyon nehéz Sudoku rejtvényeknél (>60 üres cella) a megoldás nem garantált
+- A futási idő exponenciálisan nőhet az üres cellák számával
+- Nagy memóriaigény nagy populációméretnél
+
+---
+
+## Tippek a Használathoz
+- Kezdje kisebb populációmérettel (1000-3000)
+- Állítsa be a generációk számát a rejtvény nehézségének megfelelően
+- Használja a vizualizációt a konvergencia megfigyeléséhez
+- Nehezebb rejtvényeknél növelje az elit arányt
 
 ---
 
